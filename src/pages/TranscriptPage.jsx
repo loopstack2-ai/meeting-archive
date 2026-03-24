@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import TranscriptEntry from '../components/TranscriptEntry'
 import ShareModal from '../components/ShareModal'
+import { LANGUAGES, translateSegments } from '../lib/translate'
 
 const STATUS_LABELS = {
   completed: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'COMPLETED' },
@@ -36,6 +37,10 @@ export default function TranscriptPage() {
   const [editingSpeaker, setEditingSpeaker] = useState(null) // label being edited
   const audioRef = useRef(null)
   const [playingSegment, setPlayingSegment] = useState(null)
+  const [selectedLang, setSelectedLang] = useState('en')
+  const [translatedTranscript, setTranslatedTranscript] = useState(null)
+  const [translating, setTranslating] = useState(false)
+  const [translateProgress, setTranslateProgress] = useState(0)
 
   useEffect(() => {
     fetchData()
@@ -87,10 +92,31 @@ export default function TranscriptPage() {
     audioRef.current = audio
   }
 
+  async function handleLanguageChange(lang) {
+    setSelectedLang(lang)
+    if (lang === 'en') {
+      setTranslatedTranscript(null)
+      return
+    }
+    setTranslating(true)
+    setTranslateProgress(0)
+    try {
+      const result = await translateSegments(transcript, lang, (done, total) => {
+        setTranslateProgress(Math.round((done / total) * 100))
+      })
+      setTranslatedTranscript(result)
+    } catch (err) {
+      console.error('Translation failed:', err)
+    } finally {
+      setTranslating(false)
+    }
+  }
+
+  const activeTranscript = translatedTranscript || transcript
   const uniqueSpeakers = [...new Set(transcript.map(t => t.speaker_label))]
   const filtered = search.trim()
-    ? transcript.filter(t => t.text.toLowerCase().includes(search.toLowerCase()))
-    : transcript
+    ? activeTranscript.filter(t => t.text.toLowerCase().includes(search.toLowerCase()))
+    : activeTranscript
 
   const status = STATUS_LABELS[meeting?.status] || STATUS_LABELS.completed
 
@@ -185,7 +211,7 @@ export default function TranscriptPage() {
       </div>
 
       {/* Transcript */}
-      <div className="flex-1 mx-4 mt-3 mb-24 bg-white rounded-2xl px-4 divide-y divide-gray-50">
+      <div className="flex-1 mx-4 mt-3 mb-36 bg-white rounded-2xl px-4 divide-y divide-gray-50">
         {filtered.length === 0 ? (
           <div className="py-12 text-center text-sm text-gray-400">
             {search ? 'No results found.' : 'No transcript available yet.'}
@@ -216,17 +242,39 @@ export default function TranscriptPage() {
       </div>
 
       {/* Bottom actions */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-100 px-4 py-4 flex gap-3">
-        <button className="flex-1 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl py-3 active:scale-[0.98] transition">
-          Edit
-        </button>
-        <button
-          onClick={() => setShowShare(true)}
-          className="flex-1 bg-[#0D6E6E] text-white font-semibold text-sm rounded-xl py-3 flex items-center justify-center gap-2 active:scale-[0.98] transition"
-        >
-          <ShareIcon />
-          Share
-        </button>
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-100 px-4 pt-3 pb-4 flex flex-col gap-2">
+        {/* Language selector */}
+        <div className="flex items-center gap-2">
+          <GlobeIcon />
+          <select
+            value={selectedLang}
+            onChange={e => handleLanguageChange(e.target.value)}
+            disabled={translating || transcript.length === 0}
+            className="flex-1 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:border-[#0D6E6E] disabled:opacity-50"
+          >
+            {LANGUAGES.map(l => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+          {translating && (
+            <span className="text-xs text-[#0D6E6E] font-medium shrink-0">
+              {translateProgress}%
+            </span>
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          <button className="flex-1 border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl py-3 active:scale-[0.98] transition">
+            Edit
+          </button>
+          <button
+            onClick={() => setShowShare(true)}
+            className="flex-1 bg-[#0D6E6E] text-white font-semibold text-sm rounded-xl py-3 flex items-center justify-center gap-2 active:scale-[0.98] transition"
+          >
+            <ShareIcon />
+            Share
+          </button>
+        </div>
       </div>
 
       {/* Share modal */}
@@ -353,6 +401,15 @@ function PauseSmIcon() {
     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
       <rect x="6" y="4" width="4" height="16" rx="1" />
       <rect x="14" y="4" width="4" height="16" rx="1" />
+    </svg>
+  )
+}
+
+function GlobeIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D6E6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
   )
 }
