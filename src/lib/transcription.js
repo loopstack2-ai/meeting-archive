@@ -35,7 +35,11 @@ export async function requestTranscription(audioUrl) {
       speaker_labels: true,
     }),
   })
-  if (!res.ok) throw new Error(`Transcription request failed: ${res.statusText}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.error('AssemblyAI transcript error:', err)
+    throw new Error(`Transcription request failed: ${JSON.stringify(err)}`)
+  }
   const data = await res.json()
   return data.id
 }
