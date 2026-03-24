@@ -281,7 +281,7 @@ export default function TranscriptPage() {
       {showShare && (
         <ShareModal
           meeting={meeting}
-          transcript={transcript}
+          transcript={activeTranscript}
           onClose={() => setShowShare(false)}
         />
       )}
