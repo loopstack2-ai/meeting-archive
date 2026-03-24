@@ -43,6 +43,8 @@ export default function ShareModal({ meeting, transcript, onClose }) {
 
   async function shareViaWhatsApp() {
     const url = await getPublicUrl()
+    console.log('ShareModal summary:', summary)
+    console.log('ShareModal transcript[0]:', transcript?.[0]?.text)
     const text = encodeURIComponent(
       `📋 *${meeting.title}* (${duration})\n\n${summary}\n\n${url || ''}`
     )
