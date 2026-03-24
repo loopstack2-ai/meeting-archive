@@ -33,7 +33,6 @@ export async function requestTranscription(audioUrl) {
     body: JSON.stringify({
       audio_url: audioUrl,
       speaker_labels: true,
-      auto_highlights: true,
     }),
   })
   if (!res.ok) throw new Error(`Transcription request failed: ${res.statusText}`)
