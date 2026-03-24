@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #F0F2F5;
+  overscroll-behavior: none;
+}
+
+/* Mobile-first: constrain app to phone width on desktop */
+#root {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: #E4E6EA;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  background: #F0F2F5;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Waveform canvas */
+canvas {
+  display: block;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: slideUp 0.25s ease forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Live pulse */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.live-dot {
+  animation: livePulse 1.4s ease-in-out infinite;
+}
+
+/* Speaker avatar colours */
+.avatar-1 { background: #0D6E6E; }
+.avatar-2 { background: #2D6A4F; }
+.avatar-3 { background: #5C4B8A; }
+.avatar-4 { background: #8B4513; }
+.avatar-5 { background: #1A5276; }
